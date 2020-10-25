@@ -54,4 +54,12 @@ class BasketAggregateTest {
             .when(new RemoveItemFromBasketCommand(basketId, "0001"))
             .expectEvents(new BasketItemRemovedEvent(basketId, "0001"));
     }
+
+    @Test
+    public void testRemoveNonExistentItemFromBasket() {
+        String basketId = UUID.randomUUID().toString();
+        fixture.given(new BasketCreatedEvent(basketId))
+            .when(new RemoveItemFromBasketCommand(basketId, "0001"))
+            .expectException(ItemDoesNotExistException.class);
+    }
 }
