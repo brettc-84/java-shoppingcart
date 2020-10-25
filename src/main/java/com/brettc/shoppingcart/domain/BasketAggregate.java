@@ -2,8 +2,10 @@ package com.brettc.shoppingcart.domain;
 
 import com.brettc.shoppingcart.commands.AddItemToBasketCommand;
 import com.brettc.shoppingcart.commands.CreateBasketCommand;
+import com.brettc.shoppingcart.commands.RemoveItemFromBasketCommand;
 import com.brettc.shoppingcart.events.BasketCreatedEvent;
 import com.brettc.shoppingcart.events.BasketItemQuantityChangedEvent;
+import com.brettc.shoppingcart.events.BasketItemRemovedEvent;
 import com.brettc.shoppingcart.events.NewBasketItemAddedEvent;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -28,12 +30,20 @@ public class BasketAggregate {
 
     @CommandHandler
     public void handle(AddItemToBasketCommand command) {
-        Integer itemsA = items.get(command.getItemId());
-        if (itemsA != null) {
-            AggregateLifecycle.apply(new BasketItemQuantityChangedEvent(command.getBasketId(), command.getItemId(), itemsA+1));
+        if (items.containsKey(command.getItemId())) {
+            Integer newQty = items.get(command.getItemId())+1;
+            AggregateLifecycle.apply(new BasketItemQuantityChangedEvent(command.getBasketId(), command.getItemId(), newQty));
         } else {
             AggregateLifecycle.apply(new NewBasketItemAddedEvent(command.getBasketId(), command.getItemId()));
         }
+    }
+
+    @CommandHandler
+    public void handle(RemoveItemFromBasketCommand command) throws ItemDoesNotExistException{
+        if (!items.containsKey(command.getItemId())) {
+            throw new ItemDoesNotExistException(command.getBasketId(), command.getItemId());
+        }
+        AggregateLifecycle.apply(new BasketItemRemovedEvent(command.getBasketId(), command.getItemId()));
     }
 
     @EventSourcingHandler
