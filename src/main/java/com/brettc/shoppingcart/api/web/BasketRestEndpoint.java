@@ -3,6 +3,7 @@ package com.brettc.shoppingcart.api.web;
 import com.brettc.shoppingcart.api.web.dto.AddNewBasketItemRequestDTO;
 import com.brettc.shoppingcart.commands.AddItemToBasketCommand;
 import com.brettc.shoppingcart.commands.CreateBasketCommand;
+import com.brettc.shoppingcart.commands.RemoveItemFromBasketCommand;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,13 @@ public class BasketRestEndpoint {
                                   @RequestBody AddNewBasketItemRequestDTO addNewBasketItemRequest) {
         AddItemToBasketCommand addToBasketCmd = new AddItemToBasketCommand(basketId, addNewBasketItemRequest.getItemId());
         return this.commandGateway.send(addToBasketCmd);
+    }
+
+    @DeleteMapping("/{basketId}/items/{itemId}")
+    public CompletableFuture<String> removeItemFromBasket(@PathVariable(value = "basketId") String basketId,
+                                                          @PathVariable(value = "itemId") String itemId) {
+        RemoveItemFromBasketCommand removeFromBasketCmd = new RemoveItemFromBasketCommand(basketId, itemId);
+        return this.commandGateway.send(removeFromBasketCmd);
     }
 
 }
