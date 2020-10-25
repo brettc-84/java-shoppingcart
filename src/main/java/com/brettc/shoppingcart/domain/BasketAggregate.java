@@ -62,4 +62,7 @@ public class BasketAggregate {
     public void on(BasketItemQuantityChangedEvent event) {
         this.items.put(event.getItemId(), event.getNewQuantity());
     }
+
+    @EventSourcingHandler
+    public void on(BasketItemRemovedEvent event) { this.items.remove(event.getItemId()); }
 }

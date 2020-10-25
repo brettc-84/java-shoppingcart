@@ -4,7 +4,12 @@ import com.brettc.shoppingcart.api.web.dto.AddNewBasketItemRequestDTO;
 import com.brettc.shoppingcart.commands.AddItemToBasketCommand;
 import com.brettc.shoppingcart.commands.CreateBasketCommand;
 import com.brettc.shoppingcart.commands.RemoveItemFromBasketCommand;
+import com.brettc.shoppingcart.domain.ItemDoesNotExistException;
+import io.axoniq.axonserver.grpc.command.Command;
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -36,10 +41,14 @@ public class BasketRestEndpoint {
     }
 
     @DeleteMapping("/{basketId}/items/{itemId}")
-    public CompletableFuture<String> removeItemFromBasket(@PathVariable(value = "basketId") String basketId,
+    public ResponseEntity removeItemFromBasket(@PathVariable(value = "basketId") String basketId,
                                                           @PathVariable(value = "itemId") String itemId) {
         RemoveItemFromBasketCommand removeFromBasketCmd = new RemoveItemFromBasketCommand(basketId, itemId);
-        return this.commandGateway.send(removeFromBasketCmd);
+        try {
+            return this.commandGateway.sendAndWait(removeFromBasketCmd);
+        } catch (CommandExecutionException exception) {
+            return new ResponseEntity<String>("Something went wrong:"+ exception.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
 }
