@@ -1,9 +1,6 @@
 package com.brettc.shoppingcart.domain;
 
-import com.brettc.shoppingcart.commands.AddItemToBasketCommand;
-import com.brettc.shoppingcart.commands.CreateBasketCommand;
-import com.brettc.shoppingcart.commands.IncreaseItemQuantityInBasketCommand;
-import com.brettc.shoppingcart.commands.RemoveItemFromBasketCommand;
+import com.brettc.shoppingcart.commands.*;
 import com.brettc.shoppingcart.events.BasketCreatedEvent;
 import com.brettc.shoppingcart.events.BasketItemQuantityChangedEvent;
 import com.brettc.shoppingcart.events.BasketItemRemovedEvent;
@@ -55,6 +52,21 @@ public class BasketAggregate {
         }
         Integer newQuantity = items.get(command.getItemId()) + command.getAmount();
         AggregateLifecycle.apply(new BasketItemQuantityChangedEvent(command.getBasketId(), command.getItemId(), newQuantity));
+    }
+
+    @CommandHandler
+    public void handle(DecreaseItemQuantityInBasketCommand command) throws ItemDoesNotExistException, NegativeItemQuantityException {
+        if (!items.containsKey(command.getItemId())) {
+            throw new ItemDoesNotExistException(command.getBasketId(), command.getItemId());
+        }
+        Integer newQuantity = items.get(command.getItemId()) - command.getAmount();
+        if (newQuantity == 0) {
+            AggregateLifecycle.apply(new BasketItemRemovedEvent(command.getBasketId(), command.getItemId()));
+        } else if (newQuantity < 0) {
+            throw new NegativeItemQuantityException(command.getBasketId(), command.getItemId());
+        } else {
+            AggregateLifecycle.apply(new BasketItemQuantityChangedEvent(command.getBasketId(), command.getItemId(), newQuantity));
+        }
     }
 
     @EventSourcingHandler

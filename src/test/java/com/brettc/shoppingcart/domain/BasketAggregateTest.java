@@ -1,9 +1,6 @@
 package com.brettc.shoppingcart.domain;
 
-import com.brettc.shoppingcart.commands.AddItemToBasketCommand;
-import com.brettc.shoppingcart.commands.CreateBasketCommand;
-import com.brettc.shoppingcart.commands.IncreaseItemQuantityInBasketCommand;
-import com.brettc.shoppingcart.commands.RemoveItemFromBasketCommand;
+import com.brettc.shoppingcart.commands.*;
 import com.brettc.shoppingcart.events.BasketCreatedEvent;
 import com.brettc.shoppingcart.events.BasketItemQuantityChangedEvent;
 import com.brettc.shoppingcart.events.BasketItemRemovedEvent;
@@ -65,10 +62,34 @@ class BasketAggregateTest {
     }
 
     @Test
-    public void testUpdateItemQtyInBasket() {
+    public void testIncreaseItemQtyInBasket() {
         String basketId = UUID.randomUUID().toString();
         fixture.given(new BasketCreatedEvent(basketId), new NewBasketItemAddedEvent(basketId, "0001"))
             .when(new IncreaseItemQuantityInBasketCommand(basketId, "0001", 1))
             .expectEvents(new BasketItemQuantityChangedEvent(basketId, "0001", 2));
+    }
+
+    @Test
+    public void testDecreaseItemQtyInBasket() {
+        String basketId = UUID.randomUUID().toString();
+        fixture.given(new BasketCreatedEvent(basketId), new NewBasketItemAddedEvent(basketId, "0001"), new BasketItemQuantityChangedEvent(basketId, "0001", 2))
+            .when(new DecreaseItemQuantityInBasketCommand(basketId, "0001", 1))
+            .expectEvents(new BasketItemQuantityChangedEvent(basketId, "0001", 1));
+    }
+
+    @Test
+    public void testDecreaseItemQtyBelowZeroException() {
+        String basketId = UUID.randomUUID().toString();
+        fixture.given(new BasketCreatedEvent(basketId), new NewBasketItemAddedEvent(basketId, "0001"))
+            .when(new DecreaseItemQuantityInBasketCommand(basketId, "0001", 3))
+            .expectException(NegativeItemQuantityException.class);
+    }
+
+    @Test
+    public void testDecreaseItemQtyToZero() {
+        String basketId = UUID.randomUUID().toString();
+        fixture.given(new BasketCreatedEvent(basketId), new NewBasketItemAddedEvent(basketId, "0001"))
+            .when(new DecreaseItemQuantityInBasketCommand(basketId, "0001", 1))
+            .expectEvents(new BasketItemRemovedEvent(basketId, "0001"));
     }
 }
