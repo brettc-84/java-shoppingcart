@@ -1,9 +1,8 @@
 package com.brettc.shoppingcart.api.web;
 
 import com.brettc.shoppingcart.api.web.dto.AddNewBasketItemRequestDTO;
-import com.brettc.shoppingcart.commands.AddItemToBasketCommand;
-import com.brettc.shoppingcart.commands.CreateBasketCommand;
-import com.brettc.shoppingcart.commands.RemoveItemFromBasketCommand;
+import com.brettc.shoppingcart.api.web.dto.IncreaseDecreaseBasketItemQuantityDTO;
+import com.brettc.shoppingcart.commands.*;
 import com.brettc.shoppingcart.domain.ItemDoesNotExistException;
 import io.axoniq.axonserver.grpc.command.Command;
 import org.axonframework.commandhandling.CommandExecutionException;
@@ -46,6 +45,32 @@ public class BasketRestEndpoint {
         RemoveItemFromBasketCommand removeFromBasketCmd = new RemoveItemFromBasketCommand(basketId, itemId);
         try {
             return this.commandGateway.sendAndWait(removeFromBasketCmd);
+        } catch (CommandExecutionException exception) {
+            return new ResponseEntity<String>("Something went wrong:"+ exception.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PutMapping("/{basketId}/items/{itemId}/inc-quantity")
+    public ResponseEntity increaseItemQtyInBasket(@PathVariable(value = "basketId") String basketId,
+                                                @PathVariable(value = "itemId") String itemId,
+                                                @RequestBody IncreaseDecreaseBasketItemQuantityDTO incBasketItemQtyRequest) {
+        try {
+            IncreaseItemQuantityInBasketCommand
+                incQtyCommand = new IncreaseItemQuantityInBasketCommand(basketId, itemId, incBasketItemQtyRequest.getAmount());
+            return this.commandGateway.sendAndWait(incQtyCommand);
+        } catch (CommandExecutionException exception) {
+            return new ResponseEntity<String>("Something went wrong:"+ exception.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PutMapping("/{basketId}/items/{itemId}/dec-quantity")
+    public ResponseEntity decreaseItemQtyInBasket(@PathVariable(value = "basketId") String basketId,
+                                                @PathVariable(value = "itemId") String itemId,
+                                                @RequestBody IncreaseDecreaseBasketItemQuantityDTO decBasketItemQtyRequest) {
+        try {
+            DecreaseItemQuantityInBasketCommand
+                incQtyCommand = new DecreaseItemQuantityInBasketCommand(basketId, itemId, decBasketItemQtyRequest.getAmount());
+            return this.commandGateway.sendAndWait(incQtyCommand);
         } catch (CommandExecutionException exception) {
             return new ResponseEntity<String>("Something went wrong:"+ exception.getMessage(), HttpStatus.BAD_REQUEST);
         }
